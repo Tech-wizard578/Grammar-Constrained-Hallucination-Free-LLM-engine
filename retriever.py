@@ -72,6 +72,11 @@ class HybridRetriever:
             model_name="gpt-4"  # Use GPT-4 tokenizer for consistency
         )
         
+        # BM25 index for sparse retrieval (initialized on first use)
+        self.bm25_index = None
+        self.bm25_corpus = []
+        self.bm25_docs = []
+        
         print(f"✅ Retriever initialized with {self.collection.count()} existing documents")
     
     def ingest_documents(
@@ -196,6 +201,98 @@ class HybridRetriever:
             print(f"    [{i}] Score: {doc['relevance_score']:.3f} | {doc['content'][:60]}...")
         
         return retrieved_docs
+    
+    def _build_bm25_index(self):
+        """Build BM25 index from all documents in collection."""
+        try:
+            from rank_bm25 import BM25Okapi
+            
+            # Get all documents from ChromaDB
+            all_docs = self.collection.get()
+            if not all_docs['documents']:
+                return
+            
+            self.bm25_docs = all_docs['documents']
+            # Tokenize documents for BM25
+            self.bm25_corpus = [doc.lower().split() for doc in self.bm25_docs]
+            self.bm25_index = BM25Okapi(self.bm25_corpus)
+            print(f"  📊 Built BM25 index with {len(self.bm25_corpus)} documents")
+        except ImportError:
+            print("  ⚠️ rank-bm25 not installed, skipping BM25 index")
+    
+    def hybrid_retrieve(self, query: str, k: int = None, alpha: float = 0.5) -> List[Dict]:
+        """Hybrid retrieval combining dense (vector) and sparse (BM25) search.
+        
+        Args:
+            query: User's question or search query
+            k: Number of results to return
+            alpha: Weight for dense vs sparse (0=sparse only, 1=dense only, 0.5=balanced)
+            
+        Returns:
+            List of documents with combined relevance scores
+        """
+        k = k or TOP_K_RETRIEVAL
+        
+        if self.collection.count() == 0:
+            return []
+        
+        print(f"🔍 Hybrid retrieval for: '{query[:50]}...'")
+        
+        # Build BM25 index if not exists
+        if self.bm25_index is None:
+            self._build_bm25_index()
+        
+        # Dense retrieval (vector search)
+        dense_results = self.collection.query(
+            query_texts=[query],
+            n_results=min(k * 2, self.collection.count())
+        )
+        
+        # Create score dictionary for dense results
+        doc_scores = {}
+        for i, (doc, distance) in enumerate(zip(
+            dense_results['documents'][0],
+            dense_results['distances'][0]
+        )):
+            dense_score = 1 - distance
+            doc_scores[doc] = {"dense": dense_score, "sparse": 0.0}
+        
+        # BM25 sparse retrieval
+        if self.bm25_index:
+            tokenized_query = query.lower().split()
+            bm25_scores = self.bm25_index.get_scores(tokenized_query)
+            
+            # Normalize BM25 scores
+            max_bm25 = max(bm25_scores) if max(bm25_scores) > 0 else 1
+            for i, doc in enumerate(self.bm25_docs):
+                sparse_score = bm25_scores[i] / max_bm25
+                if doc in doc_scores:
+                    doc_scores[doc]["sparse"] = sparse_score
+                elif sparse_score > 0.1:  # Only add if significant
+                    doc_scores[doc] = {"dense": 0.0, "sparse": sparse_score}
+        
+        # Combine scores using weighted average
+        combined_results = []
+        for doc, scores in doc_scores.items():
+            combined_score = alpha * scores["dense"] + (1 - alpha) * scores["sparse"]
+            combined_results.append({
+                "source_id": len(combined_results),
+                "content": doc,
+                "metadata": {"retrieval_type": "hybrid"},
+                "relevance_score": combined_score,
+                "dense_score": scores["dense"],
+                "sparse_score": scores["sparse"]
+            })
+        
+        # Sort by combined score and return top k
+        combined_results.sort(key=lambda x: x["relevance_score"], reverse=True)
+        results = combined_results[:k]
+        
+        print(f"  ✅ Hybrid retrieval: {len(results)} documents")
+        for i, doc in enumerate(results[:3]):
+            print(f"    [{i}] Combined: {doc['relevance_score']:.3f} (D:{doc['dense_score']:.2f}, S:{doc['sparse_score']:.2f})")
+        
+        return results
     
     def clear_collection(self):
         """Delete all documents from the collection."""

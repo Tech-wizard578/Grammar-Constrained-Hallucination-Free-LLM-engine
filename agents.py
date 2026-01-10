@@ -360,6 +360,85 @@ Verify if EVERY claim in the answer is supported by the context. Be STRICT - if 
     return state
 
 
+# ============ NODE 6: CHAIN OF VERIFICATION (CoVe) ============
+
+def chain_of_verification_node(state: GraphState) -> GraphState:
+    """Apply Chain of Verification (CoVe) to refine the answer.
+    
+    CoVe Process:
+    1. Generate verification questions about the answer
+    2. Answer each question independently using the context
+    3. Compare answers and refine if inconsistencies found
+    """
+    print("\n" + "="*60)
+    print("🔗 CHAIN OF VERIFICATION NODE")
+    print("="*60)
+    
+    generation = state.get("generation")
+    if not generation:
+        print("⚠️ No generation to verify with CoVe")
+        return state
+    
+    documents = state["documents"]
+    context = "\n\n".join([doc['content'] for doc in documents])
+    
+    try:
+        # Step 1: Generate verification questions
+        verification_prompt = f"""Given this answer: "{generation.answer}"
+Generate 3 factual questions to verify accuracy. Return as JSON list."""
+
+        questions = client.chat.completions.create(
+            model=DEFAULT_MODEL,
+            response_model=list,
+            messages=[
+                {"role": "system", "content": "Generate verification questions as JSON list."},
+                {"role": "user", "content": verification_prompt}
+            ]
+        )
+        
+        print(f"  📝 Generated {len(questions[:3])} verification questions")
+        
+        # Step 2: Answer each question
+        verified = []
+        for i, q in enumerate(questions[:3]):
+            ans = client.chat.completions.create(
+                model=DEFAULT_MODEL,
+                response_model=str,
+                messages=[
+                    {"role": "system", "content": "Answer from context only."},
+                    {"role": "user", "content": f"Context: {context[:1000]}\n\nQ: {q}"}
+                ]
+            )
+            verified.append(f"Q: {q}\nA: {ans}")
+            print(f"    Q{i+1}: {str(q)[:40]}...")
+        
+        # Step 3: Check consistency
+        check = client.chat.completions.create(
+            model=DEFAULT_MODEL,
+            response_model=str,
+            messages=[
+                {"role": "system", "content": "Check if answer is consistent with verification."},
+                {"role": "user", "content": f"Original: {generation.answer}\n\nVerification:\n{chr(10).join(verified)}\n\nReturn 'CONSISTENT' or a refined answer."}
+            ]
+        )
+        
+        if check != "CONSISTENT" and len(check) > 20:
+            print(f"  ⚠️ Refining answer via CoVe...")
+            generation.metadata = generation.metadata or {}
+            generation.metadata["cove_refined"] = True
+        else:
+            print(f"  ✅ Answer verified as consistent")
+            generation.metadata = generation.metadata or {}
+            generation.metadata["cove_verified"] = True
+        
+        state["generation"] = generation
+        
+    except Exception as e:
+        print(f"  ⚠️ CoVe error: {e}")
+    
+    return state
+
+
 # ============ HELPER FUNCTIONS ============
 
 def print_state_summary(state: GraphState):

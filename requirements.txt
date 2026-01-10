@@ -11,6 +11,7 @@ pydantic>=2.0.0
 # Vector Storage & Search
 chromadb>=1.0.0
 sentence-transformers
+rank-bm25
 
 # Web Search & Utils
 tavily-python
