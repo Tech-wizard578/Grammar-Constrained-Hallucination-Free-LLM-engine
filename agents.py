@@ -64,7 +64,8 @@ def retrieve_node(state: GraphState, retriever) -> GraphState:
     print("="*60)
     
     question = state["question"]
-    documents = retriever.retrieve(question, k=5)
+    # Use hybrid retrieval combining dense (vector) + sparse (BM25) search
+    documents = retriever.hybrid_retrieve(question, k=5, alpha=0.6)
     
     state["documents"] = documents
     state["iteration_count"] = state.get("iteration_count", 0) + 1
@@ -425,6 +426,8 @@ Generate 3 factual questions to verify accuracy. Return as JSON list."""
         if check != "CONSISTENT" and len(check) > 20:
             print(f"  ⚠️ Refining answer via CoVe...")
             generation.metadata = generation.metadata or {}
+            generation.metadata["original_answer"] = generation.answer  # Preserve original
+            generation.answer = check  # Actually update the answer
             generation.metadata["cove_refined"] = True
         else:
             print(f"  ✅ Answer verified as consistent")

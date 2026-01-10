@@ -12,6 +12,7 @@ from agents import (
     web_search_node,
     generate_node,
     verify_node,
+    chain_of_verification_node,
     print_state_summary
 )
 from retriever import HybridRetriever
@@ -47,6 +48,7 @@ def build_hallucination_free_graph(retriever: HybridRetriever):
     workflow.add_node("web_search", web_search_node)
     workflow.add_node("generate", generate_node)
     workflow.add_node("verify", verify_node)
+    workflow.add_node("cove", chain_of_verification_node)
     
     # Set entry point
     workflow.set_entry_point("retrieve")
@@ -74,6 +76,7 @@ def build_hallucination_free_graph(retriever: HybridRetriever):
     
     workflow.add_edge("web_search", "generate")
     workflow.add_edge("generate", "verify")
+    workflow.add_edge("verify", "cove")
     
     # Conditional: retry if hallucination detected (with iteration limit)
     def should_retry(state: GraphState) -> str:
@@ -93,7 +96,7 @@ def build_hallucination_free_graph(retriever: HybridRetriever):
         return "end"
     
     workflow.add_conditional_edges(
-        "verify",
+        "cove",
         should_retry,
         {
             "retrieve": "retrieve",
