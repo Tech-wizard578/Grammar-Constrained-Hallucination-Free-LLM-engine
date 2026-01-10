@@ -149,6 +149,39 @@ class HallucinationCheck(BaseModel):
         return v
 
 
+# ============ CHAIN OF VERIFICATION (CoVe) SCHEMAS ============
+
+class VerificationQuestions(BaseModel):
+    """List of questions to verify an answer's accuracy."""
+    questions: List[str] = Field(
+        ...,
+        description="List of factual questions to verify the answer",
+        min_length=1,
+        max_length=5
+    )
+
+
+class VerificationAnswer(BaseModel):
+    """Answer to a verification question based on context."""
+    answer: str = Field(
+        ...,
+        description="Answer based on the provided context",
+        min_length=5
+    )
+
+
+class ConsistencyCheck(BaseModel):
+    """Result of checking answer consistency with verification."""
+    is_consistent: bool = Field(
+        ...,
+        description="Is the original answer consistent with verification answers?"
+    )
+    refined_answer: Optional[str] = Field(
+        default=None,
+        description="Refined answer if inconsistencies were found"
+    )
+
+
 # ============ HELPER FUNCTIONS ============
 
 def validate_response_schema(response_dict: dict) -> HallucinationFreeResponse:

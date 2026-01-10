@@ -9,7 +9,7 @@ This module defines the building blocks of the hallucination-free engine:
 """
 
 from openai import OpenAI
-from schemas import HallucinationFreeResponse, DocumentRelevance, HallucinationCheck, Citation
+from schemas import HallucinationFreeResponse, DocumentRelevance, HallucinationCheck, Citation, VerificationQuestions, VerificationAnswer, ConsistencyCheck
 from typing import TypedDict, List, Annotated, Optional
 from langgraph.graph import add_messages
 import instructor
@@ -162,9 +162,13 @@ def web_search_node(state: GraphState) -> GraphState:
     question = state["question"]
     
     try:
-        from langchain_community.tools.tavily_search import TavilySearchResults
-        
-        web_tool = TavilySearchResults(k=3, api_key=TAVILY_API_KEY)
+        # Try new package first, fall back to deprecated one
+        try:
+            from langchain_tavily import TavilySearch
+            web_tool = TavilySearch(max_results=3, tavily_api_key=TAVILY_API_KEY)
+        except ImportError:
+            from langchain_community.tools.tavily_search import TavilySearchResults
+            web_tool = TavilySearchResults(k=3, api_key=TAVILY_API_KEY)
         
         print(f"🔎 Searching web for: '{question}'")
         results = web_tool.invoke({"query": question})
@@ -386,48 +390,49 @@ def chain_of_verification_node(state: GraphState) -> GraphState:
     try:
         # Step 1: Generate verification questions
         verification_prompt = f"""Given this answer: "{generation.answer}"
-Generate 3 factual questions to verify accuracy. Return as JSON list."""
+Generate 3 factual questions to verify accuracy."""
 
-        questions = client.chat.completions.create(
+        questions_response = client.chat.completions.create(
             model=DEFAULT_MODEL,
-            response_model=list,
+            response_model=VerificationQuestions,
             messages=[
-                {"role": "system", "content": "Generate verification questions as JSON list."},
+                {"role": "system", "content": "Generate verification questions to check factual accuracy."},
                 {"role": "user", "content": verification_prompt}
             ]
         )
+        questions = questions_response.questions
         
         print(f"  📝 Generated {len(questions[:3])} verification questions")
         
         # Step 2: Answer each question
         verified = []
         for i, q in enumerate(questions[:3]):
-            ans = client.chat.completions.create(
+            ans_response = client.chat.completions.create(
                 model=DEFAULT_MODEL,
-                response_model=str,
+                response_model=VerificationAnswer,
                 messages=[
-                    {"role": "system", "content": "Answer from context only."},
-                    {"role": "user", "content": f"Context: {context[:1000]}\n\nQ: {q}"}
+                    {"role": "system", "content": "Answer the question based only on the provided context."},
+                    {"role": "user", "content": f"Context: {context[:1000]}\n\nQuestion: {q}"}
                 ]
             )
-            verified.append(f"Q: {q}\nA: {ans}")
+            verified.append(f"Q: {q}\nA: {ans_response.answer}")
             print(f"    Q{i+1}: {str(q)[:40]}...")
         
         # Step 3: Check consistency
-        check = client.chat.completions.create(
+        consistency = client.chat.completions.create(
             model=DEFAULT_MODEL,
-            response_model=str,
+            response_model=ConsistencyCheck,
             messages=[
-                {"role": "system", "content": "Check if answer is consistent with verification."},
-                {"role": "user", "content": f"Original: {generation.answer}\n\nVerification:\n{chr(10).join(verified)}\n\nReturn 'CONSISTENT' or a refined answer."}
+                {"role": "system", "content": "Check if the original answer is consistent with the verification answers. If not, provide a refined answer."},
+                {"role": "user", "content": f"Original answer: {generation.answer}\n\nVerification Q&A:\n{chr(10).join(verified)}\n\nIs the original answer consistent with the verification?"}
             ]
         )
         
-        if check != "CONSISTENT" and len(check) > 20:
+        if not consistency.is_consistent and consistency.refined_answer:
             print(f"  ⚠️ Refining answer via CoVe...")
             generation.metadata = generation.metadata or {}
             generation.metadata["original_answer"] = generation.answer  # Preserve original
-            generation.answer = check  # Actually update the answer
+            generation.answer = consistency.refined_answer  # Actually update the answer
             generation.metadata["cove_refined"] = True
         else:
             print(f"  ✅ Answer verified as consistent")
