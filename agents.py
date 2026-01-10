@@ -8,27 +8,28 @@ This module defines the building blocks of the hallucination-free engine:
 - Verify: Check for hallucinations (Self-RAG)
 """
 
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
+from openai import OpenAI
 from schemas import HallucinationFreeResponse, DocumentRelevance, HallucinationCheck, Citation
 from typing import TypedDict, List, Annotated, Optional
 from langgraph.graph import add_messages
 import instructor
-from config import DEFAULT_MODEL, SMART_MODEL, TAVILY_API_KEY
+from config import DEFAULT_MODEL, SMART_MODEL, TAVILY_API_KEY, API_KEY, API_BASE_URL, USE_OPENROUTER
 import os
 
 
 # ============ INITIALIZE LLMs ============
 
-# Fast, cheap model for routing and grading
-llm = ChatOpenAI(model=DEFAULT_MODEL, temperature=0)
+# Create native OpenAI client (works with OpenRouter via base_url)
+openai_kwargs = {"api_key": API_KEY}
+if API_BASE_URL:
+    openai_kwargs["base_url"] = API_BASE_URL
 
-# Smart model for generation
-llm_smart = ChatOpenAI(model=SMART_MODEL, temperature=0.3)
+# Create OpenAI client
+openai_client = OpenAI(**openai_kwargs)
 
-# Patch LLMs with Instructor for structured output
-client = instructor.from_openai(llm.client)
-client_smart = instructor.from_openai(llm_smart.client)
+# Patch with Instructor for structured output
+client = instructor.from_openai(openai_client)
+client_smart = client  # Use same client, different model at call time
 
 
 # ============ GRAPH STATE ============

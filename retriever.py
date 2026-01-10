@@ -11,13 +11,15 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from typing import List, Dict, Optional
 import os
 from config import (
-    OPENAI_API_KEY, 
+    API_KEY,
+    OPENAI_API_KEY,
     CHROMA_DB_PATH, 
     COLLECTION_NAME,
     CHUNK_SIZE,
     CHUNK_OVERLAP,
     TOP_K_RETRIEVAL,
-    EMBEDDING_MODEL
+    EMBEDDING_MODEL,
+    USE_OPENROUTER
 )
 
 
@@ -39,16 +41,19 @@ class HybridRetriever:
         print(f"📦 Initializing ChromaDB at {CHROMA_DB_PATH}...")
         self.client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
         
-        # Choose embedding function based on available API key
-        if OPENAI_API_KEY:
+        # Choose embedding function based on API provider
+        # Note: OpenRouter doesn't support embeddings API, so use local embeddings or OpenAI directly
+        if OPENAI_API_KEY and not USE_OPENROUTER:
             print(f"🔑 Using OpenAI embeddings: {EMBEDDING_MODEL}")
             self.embed_fn = embedding_functions.OpenAIEmbeddingFunction(
                 api_key=OPENAI_API_KEY,
                 model_name=EMBEDDING_MODEL
             )
         else:
-            # Fallback to local embeddings
-            print("🏠 Using local Sentence Transformer embeddings")
+            # Fallback to local embeddings (required when using OpenRouter)
+            print("🏠 Using local Sentence Transformer embeddings (all-MiniLM-L6-v2)")
+            if USE_OPENROUTER:
+                print("   Note: OpenRouter doesn't support embeddings API")
             self.embed_fn = embedding_functions.SentenceTransformerEmbeddingFunction(
                 model_name="all-MiniLM-L6-v2"
             )
