@@ -1,0 +1,42 @@
+[
+  {
+    "question": "What is retrieval-augmented generation?",
+    "expected_answer": "A technique that combines information retrieval with text generation to produce more accurate and factual responses"
+  },
+  {
+    "question": "What is Python?",
+    "expected_answer": "A high-level, interpreted programming language known for its simplicity and readability"
+  },
+  {
+    "question": "How do I define a function in Python?",
+    "expected_answer": "Use the def keyword followed by the function name and parameters"
+  },
+  {
+    "question": "What are Python decorators?",
+    "expected_answer": "Functions that modify the behavior of other functions or methods"
+  },
+  {
+    "question": "What is the difference between a list and a tuple in Python?",
+    "expected_answer": "Lists are mutable while tuples are immutable"
+  },
+  {
+    "question": "What is machine learning?",
+    "expected_answer": "A subset of AI that enables systems to learn from data without explicit programming"
+  },
+  {
+    "question": "What is natural language processing?",
+    "expected_answer": "A field of AI focused on enabling computers to understand and process human language"
+  },
+  {
+    "question": "What is a neural network?",
+    "expected_answer": "A computational model inspired by biological neural networks used in machine learning"
+  },
+  {
+    "question": "What is the purpose of the self parameter in Python classes?",
+    "expected_answer": "It refers to the instance of the class and is used to access instance variables and methods"
+  },
+  {
+    "question": "What is a lambda function in Python?",
+    "expected_answer": "An anonymous function defined using the lambda keyword for simple operations"
+  }
+]

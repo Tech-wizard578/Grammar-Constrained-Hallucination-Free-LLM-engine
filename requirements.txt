@@ -1,0 +1,30 @@
+# Core Framework
+langchain==0.3.15
+langchain-community
+langchain-openai
+langgraph==0.2.60
+
+# Structured Output Enforcement
+instructor==1.8.0
+pydantic==2.10.6
+
+# Vector Storage & Search
+chromadb==0.6.4
+sentence-transformers
+
+# Web Search & Utils
+tavily-python
+python-dotenv
+
+# Evaluation
+ragas
+datasets
+
+# CLI Interface
+rich
+
+# Optional: Local LLM Support (uncomment if needed)
+# llama-cpp-python
+
+# Additional utilities
+tiktoken
