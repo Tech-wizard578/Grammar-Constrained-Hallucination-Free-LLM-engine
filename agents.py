@@ -20,8 +20,11 @@ import os
 
 # ============ INITIALIZE LLMs ============
 
+# API timeout for all calls (seconds)
+API_TIMEOUT = 30
+
 # Create native OpenAI client (works with OpenRouter via base_url)
-openai_kwargs = {"api_key": API_KEY}
+openai_kwargs = {"api_key": API_KEY, "timeout": API_TIMEOUT}
 if API_BASE_URL:
     openai_kwargs["base_url"] = API_BASE_URL
 
@@ -29,8 +32,10 @@ if API_BASE_URL:
 openai_client = OpenAI(**openai_kwargs)
 
 # Patch with Instructor for structured output
-client = instructor.from_openai(openai_client)
-client_smart = client  # Use same client, different model at call time
+# client_fast: for quick operations (grading, verification)
+# client_smart: for complex generation tasks
+client_fast = instructor.from_openai(openai_client)
+client_smart = instructor.from_openai(openai_client)
 
 
 # ============ GRAPH STATE ============
@@ -106,7 +111,7 @@ def grade_documents_node(state: GraphState) -> GraphState:
     for doc in documents:
         # Use structured output to get binary relevance
         try:
-            grade: DocumentRelevance = client.chat.completions.create(
+            grade: DocumentRelevance = client_fast.chat.completions.create(
                 model=DEFAULT_MODEL,
                 response_model=DocumentRelevance,
                 messages=[
@@ -377,7 +382,7 @@ Verify if the answer's claims can be REASONABLY DERIVED from the context.
 - Common knowledge that reasonably follows from context is acceptable"""
     
     try:
-        verification: HallucinationCheck = client.chat.completions.create(
+        verification: HallucinationCheck = client_fast.chat.completions.create(
             model=DEFAULT_MODEL,
             response_model=HallucinationCheck,
             messages=[
@@ -436,7 +441,7 @@ def chain_of_verification_node(state: GraphState) -> GraphState:
 Generate exactly 3 short factual questions to verify the accuracy of this answer.
 Each question should be answerable from the context."""
 
-        questions_response = client.chat.completions.create(
+        questions_response = client_fast.chat.completions.create(
             model=DEFAULT_MODEL,
             response_model=VerificationQuestions,
             messages=[
@@ -453,7 +458,7 @@ Each question should be answerable from the context."""
         verified = []
         for i, q in enumerate(questions[:3]):
             try:
-                ans_response = client.chat.completions.create(
+                ans_response = client_fast.chat.completions.create(
                     model=DEFAULT_MODEL,
                     response_model=VerificationAnswer,
                     messages=[
@@ -472,7 +477,7 @@ Each question should be answerable from the context."""
         # Only proceed with consistency check if we have verified answers
         if verified:
             # Step 3: Check consistency
-            consistency = client.chat.completions.create(
+            consistency = client_fast.chat.completions.create(
                 model=DEFAULT_MODEL,
                 response_model=ConsistencyCheck,
                 messages=[

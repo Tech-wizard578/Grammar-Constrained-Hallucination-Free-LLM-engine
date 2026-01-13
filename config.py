@@ -8,6 +8,22 @@ from pathlib import Path
 # Load environment variables
 load_dotenv()
 
+# ============ ENVIRONMENT PROFILES ============
+# Supports: development, production, test
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+# Environment-specific settings
+if ENVIRONMENT == "production":
+    # Stricter settings for production
+    LOG_LEVEL = "WARNING"
+    ENABLE_DEBUG_OUTPUT = False
+elif ENVIRONMENT == "test":
+    LOG_LEVEL = "DEBUG"
+    ENABLE_DEBUG_OUTPUT = True
+else:  # development
+    LOG_LEVEL = "INFO"
+    ENABLE_DEBUG_OUTPUT = True
+
 # API Keys - Support OpenAI, OpenRouter, and Groq
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")

@@ -18,6 +18,7 @@ from agents import (
 from retriever import HybridRetriever
 from functools import partial
 from typing import Dict, Any
+import time
 from config import ITERATION_LIMIT
 
 
@@ -128,7 +129,10 @@ def run_query(app, question: str, verbose: bool = True) -> Dict[str, Any]:
         - errors: list of error messages
         - iterations: number of retry iterations
         - documents_retrieved: count of documents retrieved
+        - elapsed_time_seconds: time taken to run query
     """
+    start_time = time.time()
+    
     print("\n" + "="*80)
     print(f"🚀 RUNNING QUERY: {question}")
     print("="*80)
@@ -151,21 +155,25 @@ def run_query(app, question: str, verbose: bool = True) -> Dict[str, Any]:
             print_state_summary(final_state)
         
         # Return structured result
+        elapsed_time = time.time() - start_time
         return {
             "success": final_state.get("generation") is not None,
             "response": final_state.get("generation"),
             "errors": final_state.get("errors", []),
             "iterations": final_state.get("iteration_count", 0),
             "documents_retrieved": len(final_state.get("documents", [])),
+            "elapsed_time_seconds": round(elapsed_time, 2),
             "_raw_state": final_state  # Keep raw state for backward compatibility
         }
     except Exception as e:
+        elapsed_time = time.time() - start_time
         return {
             "success": False,
             "response": None,
             "errors": [str(e)],
             "iterations": 0,
-            "documents_retrieved": 0
+            "documents_retrieved": 0,
+            "elapsed_time_seconds": round(elapsed_time, 2)
         }
 
 

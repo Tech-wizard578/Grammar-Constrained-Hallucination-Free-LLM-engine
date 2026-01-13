@@ -18,7 +18,9 @@ import chromadb
 from chromadb.utils import embedding_functions
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Tuple
+from functools import lru_cache
+import hashlib
 from config import (
     API_KEY,
     OPENAI_API_KEY,
@@ -86,6 +88,10 @@ class HybridRetriever:
         self.bm25_corpus = []
         self.bm25_docs = []
         self._bm25_doc_count = 0  # Track doc count for cache invalidation
+        
+        # LRU cache for query results (cleared when documents change)
+        self._query_cache: Dict[str, List[Dict]] = {}
+        self._cache_max_size = 100
         
         print(f"✅ Retriever initialized with {self.collection.count()} existing documents")
     
@@ -184,6 +190,17 @@ class HybridRetriever:
             print("⚠️ Warning: No documents in collection. Please ingest documents first.")
             return []
         
+        # Check cache first (invalidate if document count changed)
+        cache_key = hashlib.md5(f"{query}:{k}".encode()).hexdigest()
+        current_count = self.collection.count()
+        if current_count != self._bm25_doc_count:
+            # Documents changed, clear cache
+            self._query_cache.clear()
+        
+        if cache_key in self._query_cache:
+            print(f"🔍 Cache hit for query: '{query[:50]}...'")
+            return self._query_cache[cache_key]
+        
         print(f"🔍 Retrieving top {k} documents for query: '{query[:50]}...'")
         
         # Query ChromaDB
@@ -210,7 +227,14 @@ class HybridRetriever:
         for i, doc in enumerate(retrieved_docs[:3]):  # Show top 3
             print(f"    [{i}] Score: {doc['relevance_score']:.3f} | {doc['content'][:60]}...")
         
+        # Store in cache (LRU-style: remove oldest if over limit)
+        if len(self._query_cache) >= self._cache_max_size:
+            oldest_key = next(iter(self._query_cache))
+            del self._query_cache[oldest_key]
+        self._query_cache[cache_key] = retrieved_docs
+        
         return retrieved_docs
+
     
     def _build_bm25_index(self):
         """Build BM25 index from all documents in collection."""

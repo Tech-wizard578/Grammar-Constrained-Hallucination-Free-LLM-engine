@@ -166,6 +166,61 @@ def save_evaluation_results(results: dict, output_path: str):
     print(f"💾 Results saved to {output_path}")
 
 
+def compare_with_baseline(current_results: dict, baseline_path: str) -> Dict[str, Any]:
+    """Compare current evaluation scores with a baseline.
+    
+    Args:
+        current_results: Current evaluation results dictionary
+        baseline_path: Path to baseline JSON file
+        
+    Returns:
+        Dictionary with improvements/regressions for each metric
+    """
+    try:
+        with open(baseline_path, 'r') as f:
+            baseline = json.load(f)
+        
+        current_scores = current_results.get("scores", {})
+        baseline_scores = baseline.get("scores", {})
+        
+        comparison = {
+            "baseline_timestamp": baseline.get("timestamp", "unknown"),
+            "current_timestamp": current_results.get("timestamp", "unknown"),
+            "improvements": {},
+            "overall_improved": True
+        }
+        
+        for metric in current_scores:
+            if metric in baseline_scores:
+                diff = current_scores[metric] - baseline_scores[metric]
+                comparison["improvements"][metric] = {
+                    "baseline": round(baseline_scores[metric], 3),
+                    "current": round(current_scores[metric], 3),
+                    "change": round(diff, 3),
+                    "improved": diff >= 0
+                }
+                if diff < 0:
+                    comparison["overall_improved"] = False
+        
+        # Print comparison summary
+        print("\n" + "="*60)
+        print("📊 BASELINE COMPARISON")
+        print("="*60)
+        for metric, data in comparison["improvements"].items():
+            arrow = "⬆️" if data["improved"] else "⬇️"
+            print(f"  {metric}: {data['baseline']:.3f} → {data['current']:.3f} ({data['change']:+.3f}) {arrow}")
+        print("="*60)
+        
+        return comparison
+        
+    except FileNotFoundError:
+        print(f"⚠️ Baseline file not found: {baseline_path}")
+        return {"error": f"Baseline not found: {baseline_path}"}
+    except Exception as e:
+        print(f"❌ Error comparing with baseline: {e}")
+        return {"error": str(e)}
+
+
 if __name__ == "__main__":
     """Run evaluation with sample test cases."""
     print("To run evaluation, you need:")
