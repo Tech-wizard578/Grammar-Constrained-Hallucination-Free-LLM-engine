@@ -28,3 +28,7 @@ rich>=13.0.0
 # Additional utilities
 tiktoken
 typing-extensions>=4.8.0
+
+# Web Application
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
