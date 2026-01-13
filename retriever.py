@@ -4,12 +4,21 @@ This module handles document ingestion, chunking, embedding, and retrieval.
 Supports both web URLs and PDF files as input sources.
 """
 
+import os
+import warnings
+
+# Set USER_AGENT to identify web requests (suppresses LangChain warning)
+if not os.environ.get("USER_AGENT"):
+    os.environ["USER_AGENT"] = "HallucinationFreeEngine/1.0 (RAG Knowledge Base Indexer)"
+
+# Suppress FutureWarning from transformers about clean_up_tokenization_spaces
+warnings.filterwarnings("ignore", category=FutureWarning, module="transformers.tokenization_utils_base")
+
 import chromadb
 from chromadb.utils import embedding_functions
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from typing import List, Dict, Optional
-import os
 from config import (
     API_KEY,
     OPENAI_API_KEY,

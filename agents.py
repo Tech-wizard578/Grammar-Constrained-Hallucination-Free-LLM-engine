@@ -162,27 +162,56 @@ def web_search_node(state: GraphState) -> GraphState:
     question = state["question"]
     
     try:
+        # Suppress warnings from langchain_tavily package
+        import warnings
+        warnings.filterwarnings("ignore", message="Field name.*shadows an attribute in parent")
+        
         # Try new package first, fall back to deprecated one
         try:
             from langchain_tavily import TavilySearch
-            web_tool = TavilySearch(max_results=3, tavily_api_key=TAVILY_API_KEY)
+            web_tool = TavilySearch(max_results=3)
+            using_new_api = True
         except ImportError:
             from langchain_community.tools.tavily_search import TavilySearchResults
             web_tool = TavilySearchResults(k=3, api_key=TAVILY_API_KEY)
+            using_new_api = False
         
         print(f"🔎 Searching web for: '{question}'")
-        results = web_tool.invoke({"query": question})
+        results = web_tool.invoke(question)
+        
+        # Handle different response formats
+        if isinstance(results, str):
+            # New API may return string - parse it
+            import json
+            try:
+                results = json.loads(results)
+            except:
+                results = [{"content": results, "url": "web", "title": "Web Result"}]
+        
+        # Ensure results is a list
+        if isinstance(results, dict):
+            results = [results]
         
         # Convert to document format
         web_docs = []
         for i, result in enumerate(results):
+            # Handle both dict and other formats
+            if isinstance(result, dict):
+                content = result.get("content", "") or result.get("snippet", "") or str(result)
+                url = result.get("url", "web")
+                title = result.get("title", "Web Result")
+            else:
+                content = str(result)
+                url = "web"
+                title = "Web Result"
+            
             web_docs.append({
                 "source_id": 1000 + i,  # Offset to distinguish from KB docs
-                "content": result.get("content", ""),
+                "content": content,
                 "metadata": {
-                    "source": result.get("url", "web"), 
+                    "source": url, 
                     "type": "web_search",
-                    "title": result.get("title", "")
+                    "title": title
                 },
                 "relevance_score": 0.8  # Assume web results are relevant
             })
@@ -331,7 +360,10 @@ Answer to verify:
 Reasoning provided:
 {generation.reasoning}
 
-Verify if EVERY claim in the answer is supported by the context. Be STRICT - if any claim lacks evidence, mark as unsupported."""
+Verify if the answer's claims can be REASONABLY DERIVED from the context. 
+- Paraphrasing is ALLOWED - the answer doesn't need to use exact words from context
+- Only mark as unsupported if a claim introduces NEW FACTS not present or implied in context
+- Common knowledge that reasonably follows from context is acceptable"""
     
     try:
         verification: HallucinationCheck = client.chat.completions.create(
@@ -340,7 +372,7 @@ Verify if EVERY claim in the answer is supported by the context. Be STRICT - if 
             messages=[
                 {
                     "role": "system", 
-                    "content": "You verify if answers are fully supported by context. Be STRICT - any unsupported claim means is_supported=False."
+                    "content": "You verify if answers are supported by context. Allow paraphrasing and reasonable inferences. Only flag TRUE hallucinations - claims that introduce completely new facts NOT derivable from the context. Do NOT flag paraphrased content as hallucinations."
                 },
                 {"role": "user", "content": verification_prompt}
             ],
@@ -390,59 +422,79 @@ def chain_of_verification_node(state: GraphState) -> GraphState:
     try:
         # Step 1: Generate verification questions
         verification_prompt = f"""Given this answer: "{generation.answer}"
-Generate 3 factual questions to verify accuracy."""
+Generate exactly 3 short factual questions to verify the accuracy of this answer.
+Each question should be answerable from the context."""
 
         questions_response = client.chat.completions.create(
             model=DEFAULT_MODEL,
             response_model=VerificationQuestions,
             messages=[
-                {"role": "system", "content": "Generate verification questions to check factual accuracy."},
+                {"role": "system", "content": "You are a verification assistant. Generate short, focused verification questions. Return valid JSON only."},
                 {"role": "user", "content": verification_prompt}
-            ]
+            ],
+            max_retries=2
         )
         questions = questions_response.questions
         
         print(f"  📝 Generated {len(questions[:3])} verification questions")
         
-        # Step 2: Answer each question
+        # Step 2: Answer each question with better error handling
         verified = []
         for i, q in enumerate(questions[:3]):
-            ans_response = client.chat.completions.create(
+            try:
+                ans_response = client.chat.completions.create(
+                    model=DEFAULT_MODEL,
+                    response_model=VerificationAnswer,
+                    messages=[
+                        {"role": "system", "content": "You are a fact-checker. Answer the question in 1-2 sentences based ONLY on the provided context. If the context doesn't contain the answer, say 'Not found in context'. Return valid JSON."},
+                        {"role": "user", "content": f"Context:\n{context[:1500]}\n\nQuestion: {q}\n\nProvide a brief factual answer."}
+                    ],
+                    max_retries=2
+                )
+                verified.append(f"Q: {q}\nA: {ans_response.answer}")
+                print(f"    Q{i+1}: {q}")
+            except Exception as q_error:
+                print(f"    ⚠️ Skipping Q{i+1} due to error: {str(q_error)[:50]}")
+                # Continue with other questions instead of failing entirely
+                continue
+        
+        # Only proceed with consistency check if we have verified answers
+        if verified:
+            # Step 3: Check consistency
+            consistency = client.chat.completions.create(
                 model=DEFAULT_MODEL,
-                response_model=VerificationAnswer,
+                response_model=ConsistencyCheck,
                 messages=[
-                    {"role": "system", "content": "Answer the question based only on the provided context."},
-                    {"role": "user", "content": f"Context: {context[:1000]}\n\nQuestion: {q}"}
-                ]
+                    {"role": "system", "content": "You are a consistency checker. Determine if the original answer aligns with the verification answers. Return valid JSON with is_consistent (boolean) and optionally refined_answer (string)."},
+                    {"role": "user", "content": f"Original answer: {generation.answer}\n\nVerification Q&A:\n{chr(10).join(verified)}\n\nIs the original answer consistent with these verification answers?"}
+                ],
+                max_retries=2
             )
-            verified.append(f"Q: {q}\nA: {ans_response.answer}")
-            print(f"    Q{i+1}: {str(q)[:40]}...")
-        
-        # Step 3: Check consistency
-        consistency = client.chat.completions.create(
-            model=DEFAULT_MODEL,
-            response_model=ConsistencyCheck,
-            messages=[
-                {"role": "system", "content": "Check if the original answer is consistent with the verification answers. If not, provide a refined answer."},
-                {"role": "user", "content": f"Original answer: {generation.answer}\n\nVerification Q&A:\n{chr(10).join(verified)}\n\nIs the original answer consistent with the verification?"}
-            ]
-        )
-        
-        if not consistency.is_consistent and consistency.refined_answer:
-            print(f"  ⚠️ Refining answer via CoVe...")
-            generation.metadata = generation.metadata or {}
-            generation.metadata["original_answer"] = generation.answer  # Preserve original
-            generation.answer = consistency.refined_answer  # Actually update the answer
-            generation.metadata["cove_refined"] = True
+            
+            if not consistency.is_consistent and consistency.refined_answer:
+                print(f"  ⚠️ Refining answer via CoVe...")
+                generation.metadata = generation.metadata or {}
+                generation.metadata["original_answer"] = generation.answer
+                generation.answer = consistency.refined_answer
+                generation.metadata["cove_refined"] = True
+            else:
+                print(f"  ✅ Answer verified as consistent")
+                generation.metadata = generation.metadata or {}
+                generation.metadata["cove_verified"] = True
         else:
-            print(f"  ✅ Answer verified as consistent")
+            print(f"  ⚠️ No verified answers - skipping consistency check")
             generation.metadata = generation.metadata or {}
-            generation.metadata["cove_verified"] = True
+            generation.metadata["cove_skipped"] = True
         
         state["generation"] = generation
         
     except Exception as e:
-        print(f"  ⚠️ CoVe error: {e}")
+        print(f"  ⚠️ CoVe error (continuing with unverified answer): {str(e)[:100]}")
+        # Don't fail - just skip CoVe and keep the original answer
+        if generation:
+            generation.metadata = generation.metadata or {}
+            generation.metadata["cove_error"] = str(e)[:100]
+            state["generation"] = generation
     
     return state
 

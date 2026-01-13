@@ -59,9 +59,9 @@ class HallucinationFreeResponse(BaseModel):
     
     answer: str = Field(
         ..., 
-        description="Concise answer to user query (1-3 sentences)",
+        description="Concise answer to user query (2-4 sentences)",
         min_length=20,
-        max_length=500
+        max_length=800
     )
     
     citations: List[Citation] = Field(
