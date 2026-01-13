@@ -13,7 +13,8 @@ from schemas import HallucinationFreeResponse, DocumentRelevance, HallucinationC
 from typing import TypedDict, List, Annotated, Optional
 from langgraph.graph import add_messages
 import instructor
-from config import DEFAULT_MODEL, SMART_MODEL, TAVILY_API_KEY, API_KEY, API_BASE_URL, USE_OPENROUTER
+import time
+from config import DEFAULT_MODEL, SMART_MODEL, TAVILY_API_KEY, API_KEY, API_BASE_URL, USE_OPENROUTER, MAX_RETRIES
 import os
 
 
@@ -292,29 +293,39 @@ Question: {question}
 
 Provide a structured response with reasoning, answer, and citations."""
     
-    try:
-        # Use Instructor for structured output
-        response: HallucinationFreeResponse = client_smart.chat.completions.create(
-            model=SMART_MODEL,
-            response_model=HallucinationFreeResponse,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
-            max_retries=3
-        )
-        
-        state["generation"] = response
-        
-        print(f"✅ Generated response:")
-        print(f"  Answer: {response.answer[:100]}...")
-        print(f"  Confidence: {response.confidence}")
-        print(f"  Citations: {len(response.citations)}")
-        
-    except Exception as e:
-        print(f"❌ Generation failed: {e}")
-        state["errors"] = state.get("errors", []) + [f"Generation error: {e}"]
-        state["generation"] = None
+    # Retry loop with exponential backoff
+    last_error = None
+    for attempt in range(MAX_RETRIES):
+        try:
+            # Use Instructor for structured output
+            response: HallucinationFreeResponse = client_smart.chat.completions.create(
+                model=SMART_MODEL,
+                response_model=HallucinationFreeResponse,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                max_retries=2  # Instructor's internal retries
+            )
+            
+            state["generation"] = response
+            
+            print(f"✅ Generated response:")
+            print(f"  Answer: {response.answer[:100]}...")
+            print(f"  Confidence: {response.confidence}")
+            print(f"  Citations: {len(response.citations)}")
+            return state
+            
+        except Exception as e:
+            last_error = e
+            if attempt < MAX_RETRIES - 1:
+                wait_time = 2 ** attempt  # Exponential backoff: 1s, 2s, 4s...
+                print(f"  ⚠️ Attempt {attempt + 1}/{MAX_RETRIES} failed, retrying in {wait_time}s...")
+                time.sleep(wait_time)
+            else:
+                print(f"❌ Generation failed after {MAX_RETRIES} attempts: {e}")
+                state["errors"] = state.get("errors", []) + [f"Generation error: {e}"]
+                state["generation"] = None
     
     return state
 

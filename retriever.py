@@ -85,6 +85,7 @@ class HybridRetriever:
         self.bm25_index = None
         self.bm25_corpus = []
         self.bm25_docs = []
+        self._bm25_doc_count = 0  # Track doc count for cache invalidation
         
         print(f"✅ Retriever initialized with {self.collection.count()} existing documents")
     
@@ -247,9 +248,11 @@ class HybridRetriever:
         
         print(f"🔍 Hybrid retrieval for: '{query[:50]}...'")
         
-        # Build BM25 index if not exists
-        if self.bm25_index is None:
+        # Build BM25 index if not exists or if document count changed (cache invalidation)
+        current_count = self.collection.count()
+        if self.bm25_index is None or current_count != self._bm25_doc_count:
             self._build_bm25_index()
+            self._bm25_doc_count = current_count
         
         # Dense retrieval (vector search)
         dense_results = self.collection.query(

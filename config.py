@@ -1,6 +1,7 @@
 """Configuration management for the Hallucination-Free LLM Engine."""
 
 import os
+from typing import Dict, Any, List
 from dotenv import load_dotenv
 from pathlib import Path
 
@@ -16,6 +17,10 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 # Determine which API to use (priority: Groq > OpenRouter > OpenAI)
 USE_GROQ = os.getenv("USE_GROQ", "false").lower() == "true"
 USE_OPENROUTER = os.getenv("USE_OPENROUTER", "false").lower() == "true"
+
+# Validate mutual exclusivity of providers
+if sum([USE_GROQ, USE_OPENROUTER]) > 1:
+    raise ValueError("Only one API provider can be active at a time (USE_GROQ or USE_OPENROUTER, not both)")
 
 if USE_GROQ:
     API_KEY = GROQ_API_KEY
@@ -49,7 +54,7 @@ MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
 ITERATION_LIMIT = int(os.getenv("ITERATION_LIMIT", "3"))
 
 # Validation
-def validate_config():
+def validate_config() -> bool:
     """Validate that required configuration is present."""
     errors = []
     
@@ -70,7 +75,7 @@ def validate_config():
     
     return True
 
-def get_config_summary():
+def get_config_summary() -> Dict[str, Any]:
     """Get a summary of current configuration."""
     if USE_GROQ:
         provider = "Groq"
@@ -93,3 +98,7 @@ def get_config_summary():
         "max_retries": MAX_RETRIES,
         "iteration_limit": ITERATION_LIMIT,
     }
+
+
+# Run validation at import time to catch misconfigurations early
+validate_config()

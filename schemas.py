@@ -4,7 +4,7 @@ This module defines all output schemas that enforce EXACT structure for LLM resp
 The LLM is NOT allowed to return free text - every response must be a validated JSON object.
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict, model_validator
 from typing import List, Literal, Optional
 from datetime import datetime
 
@@ -50,6 +50,12 @@ class HallucinationFreeResponse(BaseModel):
     
     Enforces structured reasoning with citations and confidence assessment.
     """
+    
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        validate_assignment=True,
+        extra='forbid'  # Prevent additional fields
+    )
     
     reasoning: str = Field(
         ..., 
@@ -101,6 +107,15 @@ class HallucinationFreeResponse(BaseModel):
         if len(v) == 0:
             raise ValueError('At least one citation is required to support the answer')
         return v
+
+    @model_validator(mode='after')
+    def validate_citation_bounds(self) -> 'HallucinationFreeResponse':
+        """Ensure citation source_ids are within reasonable bounds."""
+        if self.citations:
+            max_id = max(c.source_id for c in self.citations)
+            if max_id > 1000:  # Reasonable limit for source references
+                raise ValueError(f"source_id {max_id} exceeds reasonable bounds (max 1000)")
+        return self
 
 
 # ============ DOCUMENT GRADER SCHEMA (for CRAG) ============

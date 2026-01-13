@@ -17,6 +17,7 @@ from agents import (
 )
 from retriever import HybridRetriever
 from functools import partial
+from typing import Dict, Any
 from config import ITERATION_LIMIT
 
 
@@ -112,7 +113,7 @@ def build_hallucination_free_graph(retriever: HybridRetriever):
     return app
 
 
-def run_query(app, question: str, verbose: bool = True) -> dict:
+def run_query(app, question: str, verbose: bool = True) -> Dict[str, Any]:
     """Run a query through the hallucination-free engine.
     
     Args:
@@ -121,7 +122,12 @@ def run_query(app, question: str, verbose: bool = True) -> dict:
         verbose: Whether to print state summary
         
     Returns:
-        Final state dictionary with generation
+        Structured result dictionary with keys:
+        - success: bool - whether generation was successful
+        - response: HallucinationFreeResponse or None
+        - errors: list of error messages
+        - iterations: number of retry iterations
+        - documents_retrieved: count of documents retrieved
     """
     print("\n" + "="*80)
     print(f"🚀 RUNNING QUERY: {question}")
@@ -137,13 +143,30 @@ def run_query(app, question: str, verbose: bool = True) -> dict:
         "errors": []
     }
     
-    # Run the graph
-    final_state = app.invoke(initial_state)
-    
-    if verbose:
-        print_state_summary(final_state)
-    
-    return final_state
+    try:
+        # Run the graph
+        final_state = app.invoke(initial_state)
+        
+        if verbose:
+            print_state_summary(final_state)
+        
+        # Return structured result
+        return {
+            "success": final_state.get("generation") is not None,
+            "response": final_state.get("generation"),
+            "errors": final_state.get("errors", []),
+            "iterations": final_state.get("iteration_count", 0),
+            "documents_retrieved": len(final_state.get("documents", [])),
+            "_raw_state": final_state  # Keep raw state for backward compatibility
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "response": None,
+            "errors": [str(e)],
+            "iterations": 0,
+            "documents_retrieved": 0
+        }
 
 
 if __name__ == "__main__":

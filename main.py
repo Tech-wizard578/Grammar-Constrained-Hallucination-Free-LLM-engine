@@ -13,6 +13,7 @@ from rich.console import Console
 from rich.markdown import Markdown
 from rich.table import Table
 from rich.panel import Panel
+from rich.progress import Progress, SpinnerColumn, TextColumn
 import sys
 
 
@@ -54,17 +55,24 @@ def query_command(args):
         console.print("[yellow]⚠️ Warning: No documents in knowledge base[/yellow]")
         console.print("[yellow]The engine will attempt web search as fallback[/yellow]\n")
     
-    # Build graph
-    console.print("[cyan]🏗️ Building engine...[/cyan]")
-    app = build_hallucination_free_graph(retriever)
+    # Build graph with progress spinner
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[progress.description]{task.description}"),
+        console=console,
+        transient=True
+    ) as progress:
+        progress.add_task("🏗️ Building engine...", total=None)
+        app = build_hallucination_free_graph(retriever)
     
     # Run query
     console.print(f"\n[bold cyan]❓ Query:[/bold cyan] {args.question}\n")
     
     try:
-        result = run_query(app, args.question, verbose=False)
+        result = run_query(app, args.question, verbose=getattr(args, 'verbose', False))
         
-        generation = result.get("generation")
+        # Use new structured response format
+        generation = result.get("response")  # Changed from "generation"
         
         if generation:
             # Display answer in a panel
@@ -174,6 +182,10 @@ Examples:
   python main.py clear --confirm
         """
     )
+    
+    # Global flags
+    parser.add_argument("--verbose", "-v", action="store_true", 
+                        help="Enable verbose output with detailed logging")
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     

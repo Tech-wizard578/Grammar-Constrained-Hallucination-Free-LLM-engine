@@ -1,7 +1,7 @@
-# Core Framework
+# Core Framework (minimum versions for compatibility)
 langchain>=0.3.0
-langchain-community
-langchain-openai
+langchain-community>=0.3.0
+langchain-openai>=0.2.0
 langgraph>=0.2.0
 
 # Structured Output Enforcement
@@ -14,7 +14,8 @@ sentence-transformers
 rank-bm25
 
 # Web Search & Utils
-tavily-python
+tavily-python>=0.3.0
+langchain-tavily>=0.1.0
 python-dotenv
 
 # Evaluation
@@ -22,7 +23,8 @@ ragas
 datasets
 
 # CLI Interface
-rich
+rich>=13.0.0
 
 # Additional utilities
 tiktoken
+typing-extensions>=4.8.0

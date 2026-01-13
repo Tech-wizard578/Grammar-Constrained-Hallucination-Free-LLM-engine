@@ -9,11 +9,13 @@ Evaluates the engine on:
 from ragas import evaluate
 from ragas.metrics import faithfulness, answer_relevancy, context_precision
 from datasets import Dataset
-from typing import List, Dict
+from typing import List, Dict, Any
+from datetime import datetime
 import json
+from config import get_config_summary
 
 
-def evaluate_engine(test_cases: List[dict], app, verbose: bool = True) -> dict:
+def evaluate_engine(test_cases: List[dict], app, verbose: bool = True) -> Dict[str, Any]:
     """Run RAGAS evaluation on test queries.
     
     Args:
@@ -22,7 +24,7 @@ def evaluate_engine(test_cases: List[dict], app, verbose: bool = True) -> dict:
         verbose: Whether to print detailed results
         
     Returns:
-        Dictionary with RAGAS scores
+        Dictionary with RAGAS scores, timestamp, and metadata
         
     Example test_case:
         {
@@ -30,8 +32,10 @@ def evaluate_engine(test_cases: List[dict], app, verbose: bool = True) -> dict:
             "expected_answer": "A programming language"  # Optional
         }
     """
+    eval_timestamp = datetime.now().isoformat()
+    
     print("\n" + "="*80)
-    print("📊 RAGAS EVALUATION")
+    print(f"📊 RAGAS EVALUATION (started: {eval_timestamp})")
     print("="*80)
     
     results = []
@@ -124,7 +128,13 @@ def evaluate_engine(test_cases: List[dict], app, verbose: bool = True) -> dict:
                 print("  - Improve document grading")
                 print("  - Increase chunk size for more context")
         
-        return dict(scores)
+        return {
+            "timestamp": eval_timestamp,
+            "scores": dict(scores),
+            "num_test_cases": len(test_cases),
+            "config": get_config_summary(),
+            "targets_met": targets_met
+        }
         
     except Exception as e:
         print(f"❌ Evaluation failed: {e}")
