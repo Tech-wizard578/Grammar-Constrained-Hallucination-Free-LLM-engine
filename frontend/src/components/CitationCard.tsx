@@ -11,37 +11,32 @@ export function CitationCard({ citation, index }: CitationCardProps) {
   
   return (
     <div 
-      className="glass-card p-4 animate-fade-in"
+      className="p-4 bg-white/[0.02] border border-white/5 rounded-xl animate-fade-in hover:border-[#00aaff]/20 transition-all group"
       style={{ animationDelay: `${index * 100}ms` }}
     >
-      <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-          <span className="text-xs font-bold text-primary">
-            {citation.source_id}
-          </span>
+      <div className="flex items-start gap-4">
+        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-xs font-mono text-white/50">
+          {citation.source_id}
         </div>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-2">
-            <Quote className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Source Quote</span>
+            <Quote className="w-3.5 h-3.5 text-white/30" />
+            <span className="text-[10px] text-white/30 uppercase tracking-widest">Source Quote</span>
           </div>
           
-          <p className="text-sm text-foreground/90 italic leading-relaxed">
+          <p className="text-sm text-white/70 italic leading-relaxed">
             "{citation.quote}"
           </p>
           
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-muted-foreground">Relevance</span>
-              <span className="text-primary font-medium">{relevancePercentage}%</span>
-            </div>
-            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+          <div className="mt-3 flex items-center gap-3">
+            <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
               <div 
-                className="h-full bg-gradient-to-r from-primary to-accent rounded-full transition-all duration-500"
+                className="h-full bg-gradient-to-r from-[#00aaff] to-[#0066cc] rounded-full transition-all duration-500"
                 style={{ width: `${relevancePercentage}%` }}
               />
             </div>
+            <span className="text-xs text-[#00aaff] font-mono">{relevancePercentage}%</span>
           </div>
         </div>
       </div>

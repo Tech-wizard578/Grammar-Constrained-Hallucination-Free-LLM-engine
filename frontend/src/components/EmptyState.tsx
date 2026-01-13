@@ -1,36 +1,36 @@
-import { Sparkles, FileQuestion, Brain } from "lucide-react";
+import { Zap, FileCheck, ShieldCheck, Cpu } from "lucide-react";
 
 export function EmptyState() {
   return (
-    <div className="text-center py-16 animate-fade-in">
+    <div className="text-center py-12 animate-fade-in opacity-80">
       <div className="relative inline-block mb-8">
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/30 to-accent/30 blur-3xl rounded-full" />
-        <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-float">
-          <Brain className="w-12 h-12 text-primary-foreground" />
+        <div className="absolute inset-0 bg-[#00aaff]/20 blur-[60px] rounded-full" />
+        <div className="relative w-20 h-20 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-center animate-glow-pulse box-shadow-[0_0_40px_rgba(0,170,255,0.1)]">
+          <Cpu className="w-10 h-10 text-[#00aaff]" />
         </div>
       </div>
       
-      <h2 className="text-2xl font-bold gradient-text mb-3">
-        Hallucination-Free AI
+      <h2 className="text-xl font-bold text-white mb-2 tracking-tight">
+        Ready for Inquiry
       </h2>
       
-      <p className="text-muted-foreground max-w-md mx-auto mb-8 leading-relaxed">
-        Ask any question and get accurate answers backed by citations from your knowledge base. 
-        Every response includes confidence scores and source references.
+      <p className="text-white/40 max-w-sm mx-auto mb-10 text-sm font-light leading-relaxed">
+        Engine loaded with hallucination-free protocols. 
+        Awaiting input for deterministic retrieval.
       </p>
       
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
-        <div className="glass-card p-4">
-          <Sparkles className="w-6 h-6 text-primary mx-auto mb-2" />
-          <p className="text-xs text-muted-foreground">Verified Answers</p>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+        <div className="p-4 border border-white/5 bg-white/[0.01] rounded-xl hover:bg-white/[0.03] transition-all group">
+          <ShieldCheck className="w-5 h-5 text-white/20 group-hover:text-[#00aaff] mx-auto mb-3 transition-colors" />
+          <p className="text-[10px] text-white/40 uppercase tracking-widest">Verifiable</p>
         </div>
-        <div className="glass-card p-4">
-          <FileQuestion className="w-6 h-6 text-primary mx-auto mb-2" />
-          <p className="text-xs text-muted-foreground">Source Citations</p>
+        <div className="p-4 border border-white/5 bg-white/[0.01] rounded-xl hover:bg-white/[0.03] transition-all group">
+          <FileCheck className="w-5 h-5 text-white/20 group-hover:text-[#00aaff] mx-auto mb-3 transition-colors" />
+          <p className="text-[10px] text-white/40 uppercase tracking-widest">Cited Sources</p>
         </div>
-        <div className="glass-card p-4">
-          <Brain className="w-6 h-6 text-primary mx-auto mb-2" />
-          <p className="text-xs text-muted-foreground">Confidence Scores</p>
+        <div className="p-4 border border-white/5 bg-white/[0.01] rounded-xl hover:bg-white/[0.03] transition-all group">
+          <Zap className="w-5 h-5 text-white/20 group-hover:text-[#00aaff] mx-auto mb-3 transition-colors" />
+          <p className="text-[10px] text-white/40 uppercase tracking-widest">High Speed</p>
         </div>
       </div>
     </div>

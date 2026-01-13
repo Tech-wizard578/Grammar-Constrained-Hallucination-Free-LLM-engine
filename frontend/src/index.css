@@ -1,30 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
 @layer base {
   :root {
-    --background: 240 20% 6%;
+    /* ========== 8BIT.AI ENTERPRISE DARK THEME ========== */
+    --background: 0 0% 0%;
     --foreground: 0 0% 100%;
 
-    --card: 240 15% 10%;
+    --card: 220 20% 6%;
     --card-foreground: 0 0% 100%;
 
-    --popover: 240 15% 10%;
+    --popover: 220 20% 6%;
     --popover-foreground: 0 0% 100%;
 
-    --primary: 239 84% 67%;
+    /* Electric Blue - Primary */
+    --primary: 199 89% 48%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 15% 15%;
+    --secondary: 0 0% 8%;
     --secondary-foreground: 0 0% 100%;
 
-    --muted: 240 10% 20%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 220 10% 12%;
+    --muted-foreground: 215 20% 55%;
 
-    --accent: 280 70% 60%;
+    /* Electric Cyan - Accent */
+    --accent: 199 89% 48%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -36,35 +39,35 @@
     --warning: 48 96% 53%;
     --warning-foreground: 0 0% 0%;
 
-    --border: 240 10% 20%;
-    --input: 240 10% 15%;
-    --ring: 239 84% 67%;
+    --border: 220 10% 15%;
+    --input: 220 10% 8%;
+    --ring: 199 89% 48%;
 
     --radius: 0.75rem;
 
-    /* Custom gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(240 20% 8%) 0%, hsl(260 25% 12%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(239 84% 67%) 0%, hsl(280 70% 60%) 100%);
-    --gradient-card: linear-gradient(135deg, hsla(240, 15%, 15%, 0.6) 0%, hsla(260, 20%, 12%, 0.4) 100%);
-    
+    /* 8bit Gradients */
+    --gradient-primary: linear-gradient(180deg, #000000 0%, #000000 100%);
+    --gradient-blue-glow: radial-gradient(ellipse at center, rgba(0, 170, 255, 0.15) 0%, transparent 60%);
+    --gradient-vignette: radial-gradient(ellipse at center, transparent 30%, rgba(0, 100, 200, 0.1) 100%);
+
     /* Glassmorphism */
-    --glass-bg: hsla(240, 15%, 15%, 0.5);
-    --glass-border: hsla(240, 20%, 30%, 0.3);
+    --glass-bg: rgba(255, 255, 255, 0.02);
+    --glass-border: rgba(255, 255, 255, 0.08);
     --glass-blur: 20px;
 
-    /* Glow effects */
-    --glow-primary: 0 0 40px hsla(239, 84%, 67%, 0.3);
-    --glow-accent: 0 0 40px hsla(280, 70%, 60%, 0.3);
-    --glow-success: 0 0 20px hsla(142, 71%, 45%, 0.4);
+    /* Electric Blue Glow Effects */
+    --glow-blue: 0 0 80px rgba(0, 170, 255, 0.3), 0 0 160px rgba(0, 170, 255, 0.15);
+    --glow-white: 0 0 40px rgba(255, 255, 255, 0.1);
+    --glow-subtle: 0 0 60px rgba(0, 170, 255, 0.1);
 
-    --sidebar-background: 240 15% 8%;
+    --sidebar-background: 0 0% 2%;
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 239 84% 67%;
+    --sidebar-primary: 199 89% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 15% 15%;
+    --sidebar-accent: 0 0% 8%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 240 10% 20%;
-    --sidebar-ring: 239 84% 67%;
+    --sidebar-border: 0 0% 10%;
+    --sidebar-ring: 199 89% 48%;
   }
 }
 
@@ -74,83 +77,252 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-black text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
-    background: var(--gradient-primary);
+    background: #000000;
     min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Selection color */
+  ::selection {
+    background: rgba(0, 170, 255, 0.3);
+    color: white;
   }
 }
 
 @layer components {
+
+  /* ========== GLASSMORPHISM CARDS ========== */
   .glass-card {
-    @apply relative overflow-hidden rounded-xl border;
-    background: var(--glass-bg);
-    border-color: var(--glass-border);
-    backdrop-filter: blur(var(--glass-blur));
-    -webkit-backdrop-filter: blur(var(--glass-blur));
+    @apply relative overflow-hidden rounded-2xl;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
-  .glass-card::before {
-    content: '';
-    @apply absolute inset-0 pointer-events-none;
-    background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.1) 0%, transparent 50%);
+  .glass-card:hover {
+    border-color: rgba(0, 170, 255, 0.15);
+    box-shadow: 0 0 40px rgba(0, 170, 255, 0.05);
   }
 
+  /* ========== GRADIENT TEXT ========== */
   .gradient-text {
-    @apply bg-clip-text text-transparent;
-    background-image: var(--gradient-accent);
+    @apply bg-clip-text text-transparent font-bold;
+    background-image: linear-gradient(135deg, #ffffff 0%, #00aaff 100%);
   }
 
-  .glow-primary {
-    box-shadow: var(--glow-primary);
+  .gradient-text-blue {
+    @apply bg-clip-text text-transparent font-bold;
+    background-image: linear-gradient(135deg, #00aaff 0%, #0066cc 100%);
   }
 
-  .glow-accent {
-    box-shadow: var(--glow-accent);
+  /* ========== GLOW EFFECTS ========== */
+  .glow-blue {
+    box-shadow: var(--glow-blue);
   }
 
-  .input-glow:focus {
-    box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3), var(--glow-primary);
+  .glow-subtle {
+    box-shadow: var(--glow-subtle);
   }
 
-  .animate-pulse-slow {
-    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  /* ========== 8BIT STYLE INPUT ========== */
+  .bit-input {
+    @apply bg-black/50 border border-white/10 rounded-xl px-6 py-4;
+    @apply text-white placeholder:text-white/30;
+    @apply transition-all duration-300;
   }
 
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
+  .bit-input:focus {
+    @apply outline-none border-[#00aaff]/40;
+    box-shadow:
+      0 0 0 2px rgba(0, 170, 255, 0.1),
+      0 0 60px rgba(0, 170, 255, 0.1),
+      inset 0 0 30px rgba(0, 170, 255, 0.03);
   }
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+  /* ========== 8BIT STYLE BUTTONS ========== */
+  .bit-button {
+    @apply bg-white text-black font-semibold px-6 py-3 rounded-xl;
+    @apply transition-all duration-300;
+  }
+
+  .bit-button:hover {
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+  }
+
+  .bit-button-outline {
+    @apply bg-transparent text-white font-medium px-6 py-3 rounded-xl;
+    @apply border border-white/20 transition-all duration-300;
+  }
+
+  .bit-button-outline:hover {
+    @apply bg-white/5 border-white/40;
+  }
+
+  /* ========== BADGE STYLES ========== */
+  .bit-badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium;
+    @apply border backdrop-blur-sm;
+  }
+
+  .bit-badge-success {
+    @apply bit-badge;
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+  }
+
+  .bit-badge-warning {
+    @apply bit-badge;
+    background: rgba(250, 204, 21, 0.1);
+    border-color: rgba(250, 204, 21, 0.3);
+    color: #facc15;
+  }
+
+  .bit-badge-danger {
+    @apply bit-badge;
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+  }
+
+  .bit-badge-info {
+    @apply bit-badge;
+    background: rgba(0, 170, 255, 0.1);
+    border-color: rgba(0, 170, 255, 0.3);
+    color: #00aaff;
+  }
+
+  /* ========== SCREEN BORDER GLOW ========== */
+  .screen-glow {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    background:
+      radial-gradient(ellipse at top, rgba(0, 170, 255, 0.08) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom, rgba(0, 100, 200, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at left, rgba(0, 170, 255, 0.03) 0%, transparent 40%),
+      radial-gradient(ellipse at right, rgba(0, 170, 255, 0.03) 0%, transparent 40%);
+  }
+
+  /* ========== DATA STREAK ANIMATION ========== */
+  .data-streak {
+    position: absolute;
+    width: 2px;
+    height: 100px;
+    background: linear-gradient(to bottom, transparent, #00aaff, transparent);
+    opacity: 0.3;
+    animation: streak 3s linear infinite;
+  }
+
+  @keyframes streak {
+    0% {
+      transform: translateY(-100vh);
+      opacity: 0;
+    }
+
+    10% {
+      opacity: 0.5;
+    }
+
+    90% {
+      opacity: 0.5;
+    }
+
+    100% {
+      transform: translateY(100vh);
+      opacity: 0;
+    }
+  }
+
+  /* ========== ANIMATIONS ========== */
+  .animate-fade-in {
+    animation: fade-in 0.6s ease-out;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.6s ease-out;
+  }
+
+  .animate-glow-pulse {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes glow-pulse {
+
+    0%,
+    100% {
+      box-shadow: 0 0 40px rgba(0, 170, 255, 0.1);
+    }
+
+    50% {
+      box-shadow: 0 0 80px rgba(0, 170, 255, 0.2);
+    }
   }
 
   @keyframes shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
+    0% {
+      background-position: -200% 0;
+    }
+
+    100% {
+      background-position: 200% 0;
+    }
   }
 
   .shimmer {
-    background: linear-gradient(
-      90deg,
-      hsl(var(--muted)) 0%,
-      hsl(var(--muted-foreground) / 0.1) 50%,
-      hsl(var(--muted)) 100%
-    );
+    background: linear-gradient(90deg,
+        rgba(255, 255, 255, 0.02) 0%,
+        rgba(255, 255, 255, 0.06) 50%,
+        rgba(255, 255, 255, 0.02) 100%);
     background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
+    animation: shimmer 2s infinite;
+  }
+
+  /* ========== DIVIDER ========== */
+  .bit-divider {
+    height: 1px;
+    background: linear-gradient(90deg,
+        transparent 0%,
+        rgba(0, 170, 255, 0.3) 50%,
+        transparent 100%);
   }
 }
 
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--muted)) transparent;
+    scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
@@ -158,7 +330,200 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted));
-    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
   }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 170, 255, 0.3);
+  }
+
+  /* Text glow utility */
+  .text-glow-blue {
+    text-shadow: 0 0 40px rgba(0, 170, 255, 0.5);
+  }
+
+  .text-glow-white {
+    text-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+  }
+}
+
+/* ========== 8BIT.AI SPECIFIC EFFECTS ========== */
+
+/* Film Grain / Noise Overlay */
+.noise-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.03;
+  background-image: url('/textures/noise.png');
+  background-repeat: repeat;
+  animation: noise 0.2s steps(8) infinite;
+}
+
+@keyframes noise {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  10% {
+    transform: translate(-1%, -1%);
+  }
+
+  20% {
+    transform: translate(1%, 1%);
+  }
+
+  30% {
+    transform: translate(-1%, 1%);
+  }
+
+  40% {
+    transform: translate(1%, -1%);
+  }
+
+  50% {
+    transform: translate(-1%, 0%);
+  }
+
+  60% {
+    transform: translate(1%, 0%);
+  }
+
+  70% {
+    transform: translate(0%, 1%);
+  }
+
+  80% {
+    transform: translate(0%, -1%);
+  }
+
+  90% {
+    transform: translate(1%, 1%);
+  }
+}
+
+/* Edge Glow / Vignette Effect */
+.edge-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 0%, rgba(0, 170, 255, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(0, 100, 200, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse 50% 80% at 0% 50%, rgba(0, 170, 255, 0.03) 0%, transparent 40%),
+    radial-gradient(ellipse 50% 80% at 100% 50%, rgba(0, 170, 255, 0.03) 0%, transparent 40%);
+}
+
+/* Animated Glowing Lines Background */
+.animated-lines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.5;
+  background-image: url('/textures/hero-lines-thin-min.jpg');
+  background-size: 200% 200%;
+  background-position: center center;
+  background-repeat: repeat;
+  animation: lines-move 8s linear infinite;
+}
+
+@keyframes lines-move {
+  0% {
+    background-position: 0% 0%;
+  }
+
+  50% {
+    background-position: 100% 100%;
+  }
+
+  100% {
+    background-position: 0% 0%;
+  }
+}
+
+/* 8bit.ai Typography */
+.font-helvetica {
+  font-family: 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+
+.font-roboto {
+  font-family: 'Inter', 'Roboto Condensed', sans-serif;
+  font-weight: 400;
+}
+
+/* Large Hero Text */
+.hero-title {
+  font-size: clamp(3rem, 8vw, 8rem);
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.hero-overline {
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+/* Hamburger Menu */
+.hamburger-line {
+  display: block;
+  width: 28px;
+  height: 2px;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.hamburger-line+.hamburger-line {
+  margin-top: 8px;
+}
+
+/* Scroll Indicator */
+.scroll-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.scroll-indicator::before {
+  content: '';
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  animation: spin 2s linear infinite;
+}
+
+/* 8bit.ai Input Style */
+.bit-input-8bit {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+  padding: 1.5rem 2rem;
+  color: white;
+  font-size: 1.125rem;
+  transition: all 0.3s ease;
+}
+
+.bit-input-8bit:focus {
+  outline: none;
+  border-color: rgba(0, 170, 255, 0.5);
+  box-shadow: 0 0 40px rgba(0, 170, 255, 0.1);
+}
+
+.bit-input-8bit::placeholder {
+  color: rgba(255, 255, 255, 0.3);
 }

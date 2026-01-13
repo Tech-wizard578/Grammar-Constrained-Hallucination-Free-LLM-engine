@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 # Import routes
-from api.routes import query, documents, stats
+from api.routes import query, documents, stats, contact
 
 
 @asynccontextmanager
@@ -39,6 +39,7 @@ app.add_middleware(
 app.include_router(query.router, prefix="/api", tags=["Query"])
 app.include_router(documents.router, prefix="/api", tags=["Documents"])
 app.include_router(stats.router, prefix="/api", tags=["Stats"])
+app.include_router(contact.router, prefix="/api", tags=["Contact"])
 
 
 @app.get("/")

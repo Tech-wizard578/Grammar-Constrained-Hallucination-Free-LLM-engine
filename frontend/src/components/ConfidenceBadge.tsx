@@ -7,45 +7,34 @@ interface ConfidenceBadgeProps {
 
 export function ConfidenceBadge({ confidence, className }: ConfidenceBadgeProps) {
   const variants = {
-    High: "bg-success/20 text-success border-success/30",
-    Medium: "bg-warning/20 text-warning border-warning/30",
-    Low: "bg-destructive/20 text-destructive border-destructive/30",
+    High: "bit-badge-success",
+    Medium: "bit-badge-warning",
+    Low: "bit-badge-danger",
   };
 
-  const glowVariants = {
-    High: "shadow-[0_0_12px_hsla(142,71%,45%,0.3)]",
-    Medium: "shadow-[0_0_12px_hsla(48,96%,53%,0.3)]",
-    Low: "shadow-[0_0_12px_hsla(0,72%,51%,0.3)]",
+  const dotColors = {
+    High: "bg-green-400",
+    Medium: "bg-yellow-400",
+    Low: "bg-red-400",
   };
 
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all duration-300",
-        variants[confidence],
-        glowVariants[confidence],
-        className
-      )}
-    >
-      <span className="relative flex h-2 w-2">
+    <span className={cn(variants[confidence], className)}>
+      <span className="relative flex h-1.5 w-1.5">
         <span
           className={cn(
             "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
-            confidence === "High" && "bg-success",
-            confidence === "Medium" && "bg-warning",
-            confidence === "Low" && "bg-destructive"
+            dotColors[confidence]
           )}
         />
         <span
           className={cn(
-            "relative inline-flex rounded-full h-2 w-2",
-            confidence === "High" && "bg-success",
-            confidence === "Medium" && "bg-warning",
-            confidence === "Low" && "bg-destructive"
+            "relative inline-flex rounded-full h-1.5 w-1.5",
+            dotColors[confidence]
           )}
         />
       </span>
-      {confidence} Confidence
+      {confidence}
     </span>
   );
 }
