@@ -115,6 +115,12 @@ def get_config_summary() -> Dict[str, Any]:
         "iteration_limit": ITERATION_LIMIT,
     }
 
+# Validation is now optional - don't crash on import if API keys are missing
+# This allows the app to start and serve basic endpoints like /health and /stats
+# The actual API call endpoints will fail gracefully if keys are not configured
+try:
+    validate_config()
+except ValueError as e:
+    import warnings
+    warnings.warn(f"Configuration warning: {e}")
 
-# Run validation at import time to catch misconfigurations early
-validate_config()
