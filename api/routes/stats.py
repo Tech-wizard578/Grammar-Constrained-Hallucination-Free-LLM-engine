@@ -17,7 +17,11 @@ async def get_stats():
     """
     try:
         import chromadb
-        from config import config
+        
+        # Get config values safely without triggering validation
+        embedding_model = os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+        chunk_size = int(os.getenv("CHUNK_SIZE", "500"))
+        chunk_overlap = int(os.getenv("CHUNK_OVERLAP", "50"))
         
         # Use lightweight persistent client without loading embeddings
         db_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "chroma_db")
@@ -27,9 +31,9 @@ async def get_stats():
             return StatsResponse(
                 collection_name="knowledge_base",
                 total_documents=0,
-                embedding_model=config.EMBEDDING_MODEL,
-                chunk_size=config.CHUNK_SIZE,
-                chunk_overlap=config.CHUNK_OVERLAP
+                embedding_model=embedding_model,
+                chunk_size=chunk_size,
+                chunk_overlap=chunk_overlap
             )
         
         client = chromadb.PersistentClient(path=db_path)
@@ -43,9 +47,9 @@ async def get_stats():
         return StatsResponse(
             collection_name="knowledge_base",
             total_documents=doc_count,
-            embedding_model=config.EMBEDDING_MODEL,
-            chunk_size=config.CHUNK_SIZE,
-            chunk_overlap=config.CHUNK_OVERLAP
+            embedding_model=embedding_model,
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap
         )
         
     except Exception as e:
